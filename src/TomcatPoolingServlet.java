@@ -14,6 +14,9 @@ import java.sql.Statement;
 
 @WebServlet(name = "TomcatPoolingServlet", urlPatterns = "/")
 public class TomcatPoolingServlet extends HttpServlet {
+
+    private static final Logger logger = Logger.getLogger(TomcatPoolingServlet.class.getName());
+    
     // Create a dataSource which registered in web.xml
     private DataSource dataSource;
     public void init(ServletConfig config) {
@@ -32,13 +35,13 @@ public class TomcatPoolingServlet extends HttpServlet {
     public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
 
         response.setContentType("text/html"); // Response mime type
+        logger.info("Handling GET request.");
 
         // Output stream to STDOUT
         PrintWriter out = response.getWriter();
 
         // the following line is to get a connection from a data source configured as a connection pool
         try (out; Connection conn = dataSource.getConnection()) {
-
 
             // the following commented lines are direct connections without pooling, which is the old way
             // Class.forName("org.gjt.mm.mysql.Driver");
@@ -51,19 +54,32 @@ public class TomcatPoolingServlet extends HttpServlet {
 
 
             if (conn == null) {
+                
+                logger.info("Failed to connect to database.");
+                
                 out.println("conn is null.");
             } else {
+                
+                logger.info("Connected to database.");
+                
                 // Declare our statement
                 Statement statement = conn.createStatement();
                 String query = "SELECT * from stars limit 10";
 
+                logger.info("Statement created.");
+
                 // Perform the query
                 ResultSet rs = statement.executeQuery(query);
+
+                logger.info("Statement executed.");
 
                 out.println("<TABLE border>");
 
                 // Iterate through each row of rs
                 while (rs.next()) {
+
+                    logger.info("Handling row.");
+                    
                     String m_id = rs.getString("id");
                     String m_LN = rs.getString("name");
                     String m_dob = rs.getString("birthYear");
@@ -78,7 +94,7 @@ public class TomcatPoolingServlet extends HttpServlet {
             }
         } catch (Exception exception) {
             exception.printStackTrace();
-
+            logger.info("ERROR: " + exception.getMessage());
             // set response status to 500 (Internal Server Error)
             response.setStatus(500);
         }
